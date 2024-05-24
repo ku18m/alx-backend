@@ -1,51 +1,47 @@
-#!/usr/bin/python3
-""""""
-BaseCaching = __import__('base_caching').BaseCaching
+#!/usr/bin/env python3
+"""
+This module defines the MRUCache class,
+which represents an object that allows storing
+and retrieving items from a dictionary
+with an MRU removal mechanism when the limit is reached.
+"""
+from collections import OrderedDict
+
+from base_caching import BaseCaching
 
 
 class MRUCache(BaseCaching):
     """
-    MRUCache class that inherits from BaseCaching.
-    Implements a Most Recently Used (MRU) caching algorithm.
+    Represents an object that allows storing
+    and retrieving items from a dictionary with an MRU
+    removal mechanism when the limit is reached.
     """
-
     def __init__(self):
         """
-        Initialize MRUCache.
+        Initializes the cache.
         """
-        self.stack = []
         super().__init__()
+        self.cache_data = OrderedDict()
 
     def put(self, key, item):
         """
-        Add an item to the cache.
-
-        Args:
-            key: The key of the item.
-            item: The item to be added.
+        Adds an item in the cache.
         """
-        if key and item:
-            if self.cache_data.get(key):
-                self.stack.remove(key)
-            while len(self.stack) >= self.MAX_ITEMS:
-                delete = self.stack.pop()
-                self.cache_data.pop(delete)
-                print('DISCARD: {}'.format(delete))
-            self.stack.append(key)
+        if key is None or item is None:
+            return
+        if key not in self.cache_data:
+            if len(self.cache_data) + 1 > BaseCaching.MAX_ITEMS:
+                mru_key, _ = self.cache_data.popitem(False)
+                print("DISCARD:", mru_key)
+            self.cache_data[key] = item
+            self.cache_data.move_to_end(key, last=False)
+        else:
             self.cache_data[key] = item
 
     def get(self, key):
         """
-        Retrieve an item from the cache.
-
-        Args:
-            key: The key of the item to be retrieved.
-
-        Returns:
-            The value associated with the given key,
-            or None if the key is not found.
+        Retrieves an item by key.
         """
-        if self.cache_data.get(key):
-            self.stack.remove(key)
-            self.stack.append(key)
-        return self.cache_data.get(key)
+        if key is not None and key in self.cache_data:
+            self.cache_data.move_to_end(key, last=False)
+        return self.cache_data.get(key, None)
